@@ -4,12 +4,11 @@ import string
 from moviepy.editor import VideoFileClip
 
 class VideoClipper:
-    def __init__(self, video_path, fps, size_scale, clip_length, output_format):
+    def __init__(self, video_path, fps, size_scale, clip_length):
         self.video_path = video_path
         self.fps = fps
         self.size_scale = size_scale
         self.clip_length = clip_length
-        self.output_format = output_format
 
     def random_string(self, length):
         letters = string.ascii_lowercase
@@ -35,15 +34,12 @@ class VideoClipper:
         for i in range(int(chunks)):
             start = i * self.clip_length
             end = start + self.clip_length
-            output_filename = self.random_string(10) + '.' + self.output_format
+            output_filename = self.random_string(10) + '.gif'
             output_path = os.path.join(self.output_dir, output_filename)
             if end < duration:
                 subclip = clip.subclip(start, end)
                 subclip_resized = subclip.resize(height=int(subclip.h * self.size_scale))
-                if self.output_format == 'gif':
-                    subclip_resized.write_gif(output_path, fps=self.fps)
-                elif self.output_format == 'mp4':
-                    subclip_resized.write_videofile(output_path, fps=self.fps)
+                subclip_resized.write_gif(output_path, fps=self.fps)
                 subclip.close()
         clip.close()
 
@@ -57,8 +53,7 @@ def main():
     fps = int(input("Enter the frame rate: "))
     size_scale = float(input("Enter the size scale (1 for original size, 0.5 for half, etc.): "))
     clip_length = int(input("Enter the clip length in seconds: "))
-    output_format = input("Enter the output format (gif or mp4): ")
-    clipper = VideoClipper(video_path, fps, size_scale, clip_length, output_format)
+    clipper = VideoClipper(video_path, fps, size_scale, clip_length)
     clipper.process_video()
 
 if __name__ == "__main__":
