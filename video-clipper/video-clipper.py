@@ -1,14 +1,23 @@
 import os
 import random
 import string
-from moviepy.editor import VideoFileClip
+from moviepy.editor import VideoFileClip, concatenate_videoclips
+from fractions import Fraction
 
 class VideoClipper:
-    def __init__(self, video_path, fps, size_scale, clip_length):
+    def __init__(self, video_path, fps, size_scale, clip_length, format):
         self.video_path = video_path
         self.fps = fps
         self.size_scale = size_scale
         self.clip_length = clip_length
+        self.format = format
+
+    def process_audio(self, clip, start, end):
+        """Process the audio of a clip."""
+        if clip.audio:  # if the video has an audio track
+            audio_subclip = clip.audio.subclip(start, end)  # get the corresponding audio segment
+            return audio_subclip  # return the audio subclip
+        return None  # if no audio, return None
 
     def random_string(self, length):
         letters = string.ascii_lowercase
@@ -30,18 +39,31 @@ class VideoClipper:
     def create_subclips(self):
         clip = VideoFileClip(self.video_path)
         duration = clip.duration
+        clip_rotation = clip.rotation
         chunks = duration // self.clip_length
+        original_res = (clip.w, clip.h)
+        aspect_ratio = str(Fraction(clip.aspect_ratio))
+
+        target_resolution = (int(clip.w * self.size_scale), int(clip.h * self.size_scale))
         for i in range(int(chunks)):
             start = i * self.clip_length
             end = start + self.clip_length
-            output_filename = self.random_string(10) + '.gif'
+            output_filename = self.random_string(10) + '.' + self.format
             output_path = os.path.join(self.output_dir, output_filename)
             if end < duration:
                 subclip = clip.subclip(start, end)
-                subclip_resized = subclip.resize(height=int(subclip.h * self.size_scale))
-                subclip_resized.write_gif(output_path, fps=self.fps)
-                subclip.close()
-        clip.close()
+                if clip_rotation in (90, 270):
+                    subclip_resized = subclip.resize([target_resolution[1], target_resolution[0]])
+                else:
+                    subclip_resized = subclip.resize(target_resolution)
+                audio_subclip = self.process_audio(clip, start, end)  # process the audio
+                if audio_subclip:  # if there is audio
+                    subclip_resized = subclip_resized.set_audio(audio_subclip)  # set the audio to the subclip
+                if self.format == 'gif':
+                    subclip_resized.write_gif(output_path, fps=self.fps)
+                elif self.format == 'mp4':
+                    subclip_resized.write_videofile(output_path, fps=self.fps, threads=12)
+
 
     def process_video(self):
         if self.check_video_file():
@@ -53,7 +75,8 @@ def main():
     fps = int(input("Enter the frame rate: "))
     size_scale = float(input("Enter the size scale (1 for original size, 0.5 for half, etc.): "))
     clip_length = int(input("Enter the clip length in seconds: "))
-    clipper = VideoClipper(video_path, fps, size_scale, clip_length)
+    format = input("Enter the output format (gif or mp4): ")
+    clipper = VideoClipper(video_path, fps, size_scale, clip_length, format)
     clipper.process_video()
 
 if __name__ == "__main__":
