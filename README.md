@@ -1,3 +1,5 @@
+![moviepy](https://img.shields.io/badge/moviepy-1.0.3-brightgreen.svg)
+
 # Video Clipper
 
 This Python script allows you to split a video file into clips of a specified length and save them as .gif files. 
