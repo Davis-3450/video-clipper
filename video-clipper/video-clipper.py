@@ -48,7 +48,7 @@ class VideoClipper:
         for i in range(int(chunks)):
             start = i * self.clip_length
             end = start + self.clip_length
-            output_filename = self.random_string(10) + '.' + self.format
+            output_filename = "video" + str(i)  + '.' + self.format
             output_path = os.path.join(self.output_dir, output_filename)
             if end < duration:
                 subclip = clip.subclip(start, end)
