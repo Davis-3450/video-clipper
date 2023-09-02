@@ -76,7 +76,7 @@ class VideoClipper:
             self.create_subclips()
 
 def main():
-    video_path = input("Enter the path to the video file: ")
+    video_path = input("Enter the path to the video file: ").strip('\"')
     fps = int(input("Enter the frame rate: "))
     size_scale = float(input("Enter the size scale (1 for original size, 0.5 for half, etc.): "))
     clip_length = int(input("Enter the clip length in seconds: "))
