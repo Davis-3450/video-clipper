@@ -43,13 +43,19 @@ class VideoClipper:
         chunks = duration // self.clip_length
         original_res = (clip.w, clip.h)
         aspect_ratio = str(Fraction(clip.aspect_ratio))
-
         target_resolution = (int(clip.w * self.size_scale), int(clip.h * self.size_scale))
+
+        # Extract the original name without its extension
+        original_name = os.path.splitext(os.path.basename(self.video_path))[0]
+
         for i in range(int(chunks)):
             start = i * self.clip_length
             end = start + self.clip_length
-            output_filename = "video" + str(i)  + '.' + self.format
+
+            # Update the output filename using the desired format
+            output_filename = f"{original_name}_clip_{i}.{self.format}"
             output_path = os.path.join(self.output_dir, output_filename)
+
             if end < duration:
                 subclip = clip.subclip(start, end)
                 if clip_rotation in (90, 270):
@@ -63,7 +69,6 @@ class VideoClipper:
                     subclip_resized.write_gif(output_path, fps=self.fps)
                 elif self.format == 'mp4':
                     subclip_resized.write_videofile(output_path, fps=self.fps, threads=12)
-
 
     def process_video(self):
         if self.check_video_file():
