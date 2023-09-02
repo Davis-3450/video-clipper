@@ -1,8 +1,11 @@
 import os
 import random
 import string
+import threading
+import glob
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from fractions import Fraction
+
 
 class VideoClipper:
     def __init__(self, video_path, fps, size_scale, clip_length, format):
@@ -14,10 +17,10 @@ class VideoClipper:
 
     def process_audio(self, clip, start, end):
         """Process the audio of a clip."""
-        if clip.audio:  # if the video has an audio track
-            audio_subclip = clip.audio.subclip(start, end)  # get the corresponding audio segment
-            return audio_subclip  # return the audio subclip
-        return None  # if no audio, return None
+        if clip.audio:
+            audio_subclip = clip.audio.subclip(start, end)
+            return audio_subclip
+        return None
 
     def random_string(self, length):
         letters = string.ascii_lowercase
@@ -25,7 +28,7 @@ class VideoClipper:
 
     def check_video_file(self):
         if not os.path.isfile(self.video_path):
-            print("The specified video file does not exist.")
+            print(f"The specified video file {self.video_path} does not exist.")
             return False
         return True
 
@@ -44,15 +47,11 @@ class VideoClipper:
         original_res = (clip.w, clip.h)
         aspect_ratio = str(Fraction(clip.aspect_ratio))
         target_resolution = (int(clip.w * self.size_scale), int(clip.h * self.size_scale))
-
-        # Extract the original name without its extension
         original_name = os.path.splitext(os.path.basename(self.video_path))[0]
 
         for i in range(int(chunks)):
             start = i * self.clip_length
             end = start + self.clip_length
-
-            # Update the output filename using the desired format
             output_filename = f"{original_name}_clip_{i}.{self.format}"
             output_path = os.path.join(self.output_dir, output_filename)
 
@@ -62,9 +61,9 @@ class VideoClipper:
                     subclip_resized = subclip.resize([target_resolution[1], target_resolution[0]])
                 else:
                     subclip_resized = subclip.resize(target_resolution)
-                audio_subclip = self.process_audio(clip, start, end)  # process the audio
-                if audio_subclip:  # if there is audio
-                    subclip_resized = subclip_resized.set_audio(audio_subclip)  # set the audio to the subclip
+                audio_subclip = self.process_audio(clip, start, end)
+                if audio_subclip:
+                    subclip_resized = subclip_resized.set_audio(audio_subclip)
                 if self.format == 'gif':
                     subclip_resized.write_gif(output_path, fps=self.fps)
                 elif self.format == 'mp4':
@@ -75,14 +74,33 @@ class VideoClipper:
             self.create_output_dir()
             self.create_subclips()
 
+
+def process_single_video(video_path, fps, size_scale, clip_length, format):
+    clipper = VideoClipper(video_path, fps, size_scale, clip_length, format)
+    clipper.process_video()
+
+
 def main():
-    video_path = input("Enter the path to the video file: ").strip('\"')
+    path = input("Enter the path to the video file or directory: ").strip('\"')
     fps = int(input("Enter the frame rate: "))
     size_scale = float(input("Enter the size scale (1 for original size, 0.5 for half, etc.): "))
     clip_length = int(input("Enter the clip length in seconds: "))
     format = input("Enter the output format (gif or mp4): ")
-    clipper = VideoClipper(video_path, fps, size_scale, clip_length, format)
-    clipper.process_video()
+
+    threads = []
+
+    if os.path.isdir(path):
+        video_files = glob.glob(os.path.join(path, '*.[Mm][Pp]4')) + glob.glob(os.path.join(path, '*.[Gg][Ii][Ff]'))
+        for video_path in video_files:
+            t = threading.Thread(target=process_single_video, args=(video_path, fps, size_scale, clip_length, format))
+            t.start()
+            threads.append(t)
+
+        for t in threads:
+            t.join()
+    else:
+        process_single_video(path, fps, size_scale, clip_length, format)
+
 
 if __name__ == "__main__":
     main()
