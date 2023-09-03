@@ -5,7 +5,8 @@ import threading
 import glob
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from fractions import Fraction
-
+import multiprocessing
+THREADS = multiprocessing.cpu_count()
 
 class VideoClipper:
     def __init__(self, video_path, fps, size_scale, clip_length, format):
@@ -67,7 +68,7 @@ class VideoClipper:
                 if self.format == 'gif':
                     subclip_resized.write_gif(output_path, fps=self.fps)
                 elif self.format == 'mp4':
-                    subclip_resized.write_videofile(output_path, fps=self.fps, threads=12)
+                    subclip_resized.write_videofile(output_path, fps=self.fps, threads=THREADS)
 
     def process_video(self):
         if self.check_video_file():
